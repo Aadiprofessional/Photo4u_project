@@ -10,7 +10,6 @@ import OTPVerificationScreen from './screens/OTPVerificationScreen';
 import SplashScreen from './components/SplashScreen';
 import LeftNavBar from './components/LeftNavBar';
 import Header from './components/Header';
-import { colors } from './styles/colors';
 import SearchResultsScreen from './screens/SearchResultsScreen';
 
 const Stack = createStackNavigator();
@@ -31,14 +30,13 @@ function HomeDrawer() {
 }
 
 export default function App() {
-  const [isLoading, setIsLoading] = useState(true); // State to control loading state
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // State to control login status
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
-    // Simulate any initialization or data loading logic
     setTimeout(() => {
       setIsLoading(false);
-    }, 2000); // Simulated loading time (2 seconds)
+    }, 2000);
   }, []);
 
   return (
