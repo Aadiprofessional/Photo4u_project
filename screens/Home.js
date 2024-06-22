@@ -8,7 +8,7 @@ import { sizes } from '../styles/sizes';
 import SearchBar from './SearchBar'; // Import the SearchBar component
 
 const { width } = Dimensions.get('window');
-const API_URL = 'https://api.flickr.com/services/rest/?method=flickr.photos.getRecent&per_page=20&page=1&api_key=6f102c62f41998d151e5a1b48713cf13&format=json&nojsoncallback=1&extras=url_s';
+const API_KEY = '6f102c62f41998d151e5a1b48713cf13';
 const CACHE_KEY = 'cached_image_urls';
 
 export default function Home({ navigation, handleLogout }) {
@@ -17,40 +17,40 @@ export default function Home({ navigation, handleLogout }) {
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    const fetchImages = async () => {
-      try {
-        setLoading(true);
+    fetchRecentImages();
+  }, []);
 
-        // Check if there are cached images
-        const cachedUrls = await AsyncStorage.getItem(CACHE_KEY);
-        if (cachedUrls) {
-          setImages(JSON.parse(cachedUrls));
-          setLoading(false);
-        }
+  const fetchRecentImages = async () => {
+    try {
+      setLoading(true);
 
-        // Fetch new images from API
-        const response = await axios.get(API_URL);
-        const urls = response.data.photos.photo.map(photo => ({
-          id: photo.id,
-          url: photo.url_s
-        }));
-
-        setImages(urls);
-        await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(urls));
-      } catch (error) {
-        console.error('Error fetching images:', error);
-      } finally {
+      // Check if there are cached images
+      const cachedUrls = await AsyncStorage.getItem(CACHE_KEY);
+      if (cachedUrls) {
+        setImages(JSON.parse(cachedUrls));
         setLoading(false);
       }
-    };
 
-    fetchImages();
-  }, []);
+      // Fetch new images from API
+      const response = await axios.get(`https://api.flickr.com/services/rest/?method=flickr.photos.getRecent&per_page=20&page=1&api_key=${API_KEY}&format=json&nojsoncallback=1&extras=url_s`);
+      const urls = response.data.photos.photo.map(photo => ({
+        id: photo.id,
+        url: photo.url_s
+      }));
+
+      setImages(urls);
+      await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(urls));
+    } catch (error) {
+      console.error('Error fetching images:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSearch = async (query) => {
     try {
       setLoading(true);
-      const response = await axios.get(`https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=6f102c62f41998d151e5a1b48713cf13&format=json&nojsoncallback=1&extras=url_s&text=${query}`);
+      const response = await axios.get(`https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=${API_KEY}&format=json&nojsoncallback=1&extras=url_s&text=${query}`);
       const urls = response.data.photos.photo.map(photo => ({
         id: photo.id,
         url: photo.url_s
@@ -150,7 +150,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: sizes.padding,
     marginBottom: sizes.margin,
-    borderBottomWidth: 0, // Removed the bottom border between search bar and icons
+    borderBottomWidth: 1, // Added bottom border between search bar and icons
+    borderBottomColor: colors.gray, // Added bottom border color
   },
   iconButton: {
     flexDirection: 'column',
