@@ -1,76 +1,60 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, StyleSheet, Dimensions, ActivityIndicator, Image } from 'react-native';
+import { View, FlatList, ActivityIndicator, StyleSheet, Image, Dimensions } from 'react-native';
 import axios from 'axios';
-import { colors } from '../styles/colors';
-import { sizes } from '../styles/sizes';
+import NetInfo from '@react-native-community/netinfo';
+import CustomSnackbar from '../components/CustomSnackbar'; // Assuming you have a custom snackbar component
+import { colors } from '../styles/colors'; // Assuming you have defined colors in your styles
+import { sizes } from '../styles/sizes'; // Assuming you have defined sizes in your styles
 
 const { width } = Dimensions.get('window');
-const API_KEY = '6f102c62f41998d151e5a1b48713cf13';
 
-export default function SearchResultsScreen({ route, navigation }) {
+const API_KEY = '6f102c62f41998d151e5a1b48713cf13'; // Replace with your Flickr API key
+
+const SearchResultsScreen = ({ route }) => {
   const { query } = route.params;
-  const [images, setImages] = useState([]);
+  const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [page, setPage] = useState(1);
+  const [networkError, setNetworkError] = useState(false);
 
   useEffect(() => {
-    searchImages(query, page);
-  }, [query, page]);
+    fetchSearchResults();
+  }, []);
 
-  const searchImages = async (query, page) => {
+  const fetchSearchResults = async () => {
+    setLoading(true);
+    const netInfo = await NetInfo.fetch();
+    if (!netInfo.isConnected) {
+      setNetworkError(true);
+      setLoading(false);
+      return;
+    }
+
     try {
-      if (page === 1) {
-        setLoading(true);
+      const response = await axios.get(`https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=${API_KEY}&format=json&nojsoncallback=1&extras=url_s&text=${query}`);
+      if (response.data.stat === 'ok') {
+        const results = response.data.photos.photo.map(photo => ({
+          id: photo.id,
+          url: photo.url_s,
+        }));
+        setData(results);
       } else {
-        setLoadingMore(true);
-      }
-
-      const response = await axios.get(`https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=${API_KEY}&format=json&nojsoncallback=1&extras=url_s&text=${query}&page=${page}`);
-      const urls = response.data.photos.photo.map(photo => ({
-        id: photo.id,
-        url: photo.url_s
-      }));
-
-      if (page === 1) {
-        setImages(urls);
-      } else {
-        setImages(prevImages => [...prevImages, ...urls]);
+        console.error('Flickr API Error:', response.data.message);
+        // Handle API error scenario
       }
     } catch (error) {
-      console.error('Error searching images:', error);
+      console.error('Error fetching search results:', error);
+      // Handle network error or other errors
     } finally {
-      if (page === 1) {
-        setLoading(false);
-      } else {
-        setLoadingMore(false);
-      }
+      setLoading(false);
     }
   };
 
-  const loadMoreImages = () => {
-    if (!loadingMore) {
-      setPage(prevPage => prevPage + 1);
-    }
+  const retrySearch = () => {
+    setNetworkError(false);
+    fetchSearchResults();
   };
 
-  const renderFooter = () => {
-    return loadingMore ? (
-      <View style={styles.loader}>
-        <ActivityIndicator size="large" color={colors.main} />
-      </View>
-    ) : null;
-  };
-
-  const renderItem = ({ item }) => (
-    <Image
-      style={styles.image}
-      source={{ uri: item.url }}
-      resizeMode="cover"
-    />
-  );
-
-  if (loading && images.length === 0) {
+  if (loading) {
     return (
       <View style={styles.loader}>
         <ActivityIndicator size="large" color={colors.primary} />
@@ -78,22 +62,39 @@ export default function SearchResultsScreen({ route, navigation }) {
     );
   }
 
+  if (networkError) {
+    return (
+      <View style={styles.container}>
+        <CustomSnackbar
+          visible={networkError}
+          message="Network unavailable"
+          onDismiss={() => setNetworkError(false)}
+          onRetry={retrySearch}
+          centerRetry={true}
+        />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <FlatList
-        data={images}
-        renderItem={renderItem}
+        data={data}
+        renderItem={({ item }) => (
+          <Image
+            style={styles.image}
+            source={{ uri: item.url }}
+            resizeMode="cover"
+          />
+        )}
         keyExtractor={(item) => item.id}
         numColumns={2}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.imageGrid}
-        onEndReached={loadMoreImages}
-        onEndReachedThreshold={0.5}
-        ListFooterComponent={renderFooter}
       />
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -115,3 +116,5 @@ const styles = StyleSheet.create({
     borderRadius: 15,
   },
 });
+
+export default SearchResultsScreen;

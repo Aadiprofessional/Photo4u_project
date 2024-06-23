@@ -3,9 +3,12 @@ import { View, Text, FlatList, StyleSheet, Dimensions, ActivityIndicator, Image,
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import NetInfo from '@react-native-community/netinfo';
 import { colors } from '../styles/colors';
 import { sizes } from '../styles/sizes';
 import SearchBar from '../components/SearchBar';
+import CustomSnackbar from '../components/CustomSnackbar';
+import CenteredRetrySnackbar from '../components/CenteredRetrySnackbar';
 
 const { width } = Dimensions.get('window');
 const API_KEY = '6f102c62f41998d151e5a1b48713cf13';
@@ -16,6 +19,8 @@ export default function HomeScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [page, setPage] = useState(1);
+  const [networkError, setNetworkError] = useState(false);
+  const [searchError, setSearchError] = useState(false);
 
   useEffect(() => {
     fetchRecentImages(page);
@@ -23,6 +28,12 @@ export default function HomeScreen({ navigation }) {
 
   const fetchRecentImages = async (page) => {
     try {
+      const state = await NetInfo.fetch();
+      if (!state.isConnected) {
+        setNetworkError(true);
+        return;
+      }
+      
       if (page === 1) {
         setLoading(true);
       } else {
@@ -80,8 +91,24 @@ export default function HomeScreen({ navigation }) {
     />
   );
 
-  const handleSearch = (query) => {
+  const handleSearch = async (query) => {
+    const state = await NetInfo.fetch();
+    if (!state.isConnected) {
+      setSearchError(true);
+      return;
+    }
     navigation.navigate('SearchResults', { query });
+  };
+
+  const retryFetch = () => {
+    setNetworkError(false);
+    fetchRecentImages(page);
+  };
+
+  const retrySearch = () => {
+    setSearchError(false);
+    // Trigger the search again (this is just a placeholder, implement your search retry logic)
+    handleSearch();
   };
 
   if (loading && images.length === 0) {
@@ -137,6 +164,17 @@ export default function HomeScreen({ navigation }) {
           <Icon name="plus" size={30} color={colors.white} />
         </View>
       </TouchableOpacity>
+      <CustomSnackbar
+        visible={networkError}
+        onDismiss={() => setNetworkError(false)}
+        onRetry={retryFetch}
+      />
+      <CenteredRetrySnackbar
+        visible={searchError}
+        message="Network unavailable"
+        onDismiss={() => setSearchError(false)}
+        onRetry={retrySearch}
+      />
     </View>
   );
 }
@@ -201,3 +239,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 });
+
