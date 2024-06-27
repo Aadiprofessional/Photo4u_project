@@ -22,7 +22,7 @@ const CenteredRetrySnackbar = ({ visible, message, onDismiss, onRetry }) => {
 
 const styles = StyleSheet.create({
   centeredSnackbar: {
-    backgroundColor: colors.error,
+    backgroundColor: colors.primary,
     alignSelf: 'center',
     justifyContent: 'center',
   },
@@ -32,7 +32,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   snackbarText: {
-    color: colors.white,
+    color: colors.background,
     flex: 1,
   },
   retryButton: {
@@ -42,7 +42,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   retryText: {
-    color: colors.white,
+    color: colors.background,
     fontWeight: 'bold',
   },
 });

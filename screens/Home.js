@@ -161,7 +161,7 @@ export default function HomeScreen({ navigation }) {
       />
       <TouchableOpacity style={styles.plusIconContainer}>
         <View style={styles.plusIconCircle}>
-          <Icon name="plus" size={30} color={colors.white} />
+          <Icon name="plus" size={30} color={colors.gray} />
         </View>
       </TouchableOpacity>
       <CustomSnackbar
@@ -229,6 +229,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: sizes.padding * 2,
     right: sizes.padding * 2,
+
   },
   plusIconCircle: {
     backgroundColor: colors.main,
